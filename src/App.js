@@ -1,25 +1,50 @@
-import logo from './logo.svg';
-import './App.css';
+import { useState, useRef, Suspense } from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { DataContext } from "./context/DataContext";
+import { SearchContext } from "./context/SearchContext";
+import SearchBar from "./Components/SearchBar";
+import Gallery from "./Components/Gallery";
+import ArtistView from "./Components/ArtistView";
+import AlbumView from "./Components/AlbumView";
+import { createResource as fetchData } from "./helper";
 
 function App() {
+  const [message, setMessage] = useState("Search for Music!");
+  const [resource, setResource] = useState(null);
+  const searchInput = useRef("");
+
+  const handleSearch = (e, term) => {
+    e.preventDefault();
+    if (term) {
+      setResource(fetchData(term));
+    } else {
+      setMessage("Please enter a search term")
+    };
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div>
+      {message}
+      <Router>
+        <SearchContext.Provider value={{ term: searchInput, handleSearch: handleSearch, }}>
+          <Routes>
+            <Route path="/" element={<SearchBar />}/>
+          </Routes>
+        </SearchContext.Provider>
+        <DataContext.Provider value={resource}>
+          <Routes>
+            <Route path="/" element={
+              <Suspense fallback={<Spinner />}>
+                <Gallery />
+              </Suspense>
+            }/>
+            <Route path="/album/:id" element={<AlbumView/>} />
+            <Route path="/artist/:id" element={<ArtistView />}/>
+          </Routes>
+        </DataContext.Provider>
+      </Router>
     </div>
   );
-}
+};
 
 export default App;
